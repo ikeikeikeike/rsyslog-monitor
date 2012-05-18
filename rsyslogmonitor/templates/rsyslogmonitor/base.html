@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sample Page</title>
+    <link rel="stylesheet" type="text/css" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="http://twitter.github.com/bootstrap/assets/css/bootstrap-responsive.css">
+    <!-- high -->
+    <link rel="stylesheet" type="text/css" href="http://bootswatch.com/cyborg/bootstrap.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/simplex/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/slate/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/spacelab/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/united/bootstrap.css" /> -->
+    <!-- middle -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/spruce/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/cerulean/bootstrap.css" /> -->
+    <!-- low -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/superhero/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/journal/bootstrap.css" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="http://bootswatch.com/readable/bootstrap.css" /> -->
+    {% block stylesheet %}{% endblock %}
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://twitter.github.com/bootstrap/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script>
+    <script type="text/javascript" src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+    <script type="text/javascript" src="http://documentcloud.github.com/backbone/backbone-min.js"></script>
+    {% block javascript %}{% endblock %}
+  </head>
+  {% block body %}{% endblock %}
+</html>
+
+
+{# vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 : #}

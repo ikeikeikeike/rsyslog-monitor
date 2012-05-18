@@ -1,0 +1,76 @@
+{% extends "rsyslogmonitor/base.html" %}
+
+{% block stylesheet %}
+<style type="text/css">
+.center {
+  text-align: center;
+}
+</style>
+{% endblock %}
+{% block javascript %}{% endblock %}
+
+
+
+{% block body %}
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a data-target=".nav-collapse" data-toggle="collapse" class="btn btn-navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </a>
+      <a href="#" class="brand">rsyslog monitor</a>
+      <div class="nav-collapse">
+        <ul class="nav pull-right">
+          <li id="fat-menu" class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Setting <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a href="https://github.com/ikeikeikeike/rsyslog-monitor">README</a></li>
+          </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <br /><br /><br />
+  {% if path %}
+  <div class="well center">
+    <a class="close" data-dismiss="alert" href="#">×</a>
+    <span class="label label-warning">Warning!</span>　
+    <span class="label label-important">cannot read a file:　<strong>{{path}}</strong></span>
+  </div>
+  {% endif %}
+  <div class="well center">
+    <div class="page-header">
+      <h1>
+        <em class="label label-important">e.p.</em>
+        <em class="label label-success">/var/log/message</em>
+        <em class="label">or</em>
+        <em class="label label-warning">/var/log/syslog</em>
+      </h1>
+    </div>
+    <div class="signin-wrapper">
+      <form action="" class="form-search" method="post">
+        {% csrf_token %}
+        <fieldset class="control-group error">
+          <input class="input-medium search-query" value=""
+                 type="text" name="path" autocomplete="on" placeholder="/path/to/log">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon-share-alt icon-white"></i> submit
+          </button>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+
+
+{# vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 : #}

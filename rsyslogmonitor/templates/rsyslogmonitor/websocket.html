@@ -1,0 +1,338 @@
+{% extends "rsyslogmonitor/base.html" %}
+
+
+{% block stylesheet %}
+<style rel="stylesheet" type="text/css">
+  .navbar-fixed-bottom form {
+    /*padding-right:40px;
+    float: right;*/
+    text-align: right;
+  }
+  #buffer {
+    overflow-y: scroll;
+  }
+  .hover-gray {
+    color: gray;
+  }
+  .hover-white {
+    color: white;
+  }
+  /* Fixed subnav on scroll, but only for 980px and up (sorry IE!) */
+  @media (min-width: 980px) {
+    .row-fluid div.subnav-fixed {
+      position: fixed;
+      top: 40px;
+      left: 0;
+      right: 0;
+      z-index: 1020; /* 10 less than .navbar-fixed to prevent any overlap */
+      border-color: #d5d5d5;
+      border-width: 0 0 1px; /* drop the border on the fixed edges */
+      -webkit-border-radius: 0;
+         -moz-border-radius: 0;
+              border-radius: 0;
+      -webkit-box-shadow: inset 0 1px 0 #fff, 0 1px 5px rgba(0,0,0,.1);
+         -moz-box-shadow: inset 0 1px 0 #fff, 0 1px 5px rgba(0,0,0,.1);
+              box-shadow: inset 0 1px 0 #fff, 0 1px 5px rgba(0,0,0,.1);
+      filter: progid:DXImageTransform.Microsoft.gradient(enabled=false); /* IE6-9 */
+    }
+    .row-fluid div.subnav-fixed .nav {
+      width: 938px;
+      margin: 0 auto;
+      padding: 0 1px;
+    }
+    .row-fluid div.subnav .nav > li:first-child > a,
+    .row-fluid div.subnav .nav > li:first-child > a:hover {
+      -webkit-border-radius: 0;
+         -moz-border-radius: 0;
+              border-radius: 0;
+    }
+  }
+  /* LARGE DESKTOP SCREENS */
+  @media (min-width: 1210px) {
+    /* Update subnav container */
+    .row-fluid div.subnav .nav {
+      width: 1168px; /* 2px less to account for left/right borders being removed when in fixed mode */
+    }
+  }
+</style>
+{% endblock %}
+
+
+{% block javascript %}
+<script type="text/javascript">
+  <!--
+  $(function(){
+
+    if (window.navigator.userAgent.toLowerCase().indexOf('safari') == -1) {
+      alert("Only works with Safari.");
+    }
+
+    // subnav
+    $(document).scroll(function(){
+        // If has not activated (has no attribute "data-top"
+        if (!$('.subnav').attr('data-top')) {
+          // If already fixed, then do nothing
+          if ($('.subnav').hasClass('subnav-fixed')) return;
+          // Remember top position
+          var offset = $('.subnav').offset();
+          $('.subnav').attr('data-top', offset.top);
+        }
+        if ($('.subnav').attr('data-top') - $('.subnav').outerHeight() <= $(this).scrollTop()) {
+          $('.subnav').addClass('subnav-fixed');
+        } else{
+          $('.subnav').removeClass('subnav-fixed');
+        }
+    });
+
+
+    /** prevent double detection */
+    var bottom_flag = false;
+    /** whether auto load is enabled */
+    var auto_load_enabled = false;
+    // Load next page automatically when the user scrolls to the bottom
+    $(window).scroll(function () {
+      if(!auto_load_enabled){
+        return;
+      }
+      var document_y = document.documentElement.scrollHeight || document.body.scrollHeight;
+      var scroll_y = document.documentElement.scrollTop || document.body.scrollTop;
+      var window_y = 0;
+      var isSafari = (navigator.appVersion.toLowerCase().indexOf('safari')+1?1:0);
+      var isOpera = (navigator.userAgent.toLowerCase().indexOf('opera')+1?1:0);
+
+      if (isOpera){
+        isIE = false;
+      }
+      if (!isSafari && !isOpera) {
+        window_y = document.documentElement.clientHeight || document.body.clientHeight || document.body.scrollHeight;
+      } else {
+        window_y = window.innerHeight;
+      }
+      if(bottom_flag && (document_y > scroll_y + window_y)){
+        bottom_flag = false;
+      }
+      if(bottom_flag){
+        return;
+      }
+
+      // detect the user came to the bottom of the page.
+      if(document_y < scroll_y + window_y + 1){
+        /* WRITE ACTION IN THE FOLLOWING LINE! */
+        //doInTheBottom();
+        bottom_flag = true;
+      }
+    });
+
+    /**
+    *Event Dispatcher
+    */
+    var WebSocketView = Backbone.View.extend({
+      el: $("div.row-fluid"),
+      element: "#buffer",
+      url: location.host+"{% url rsyslogmonitor_websocket %}",
+      socket: null,
+      events: {
+        "click #search-form button": "search",
+        "click li button.close": "closeButton"
+      },
+      initialize: function() {
+      },
+      render: function(params) {
+        var p = this.getParams(params);
+        var url = p["url"];
+        var element = this.element = p["element"];
+        var self = this;
+
+        this.socket = this.getConnection(url);
+
+        this.socket.onopen = function(e){
+          console.log("open socket>", e);
+        };
+
+        this.socket.onmessage = function(e){
+          //console.log(element);
+          $(element).append("<span>"+self.embeddedColor(e.data)+"</span><br />");
+        };
+
+        this.socket.onerror = function(e){
+          console.log("error> ", e);
+        };
+
+        this.socket.onclose = function(e){
+          console.log("close socket>", e); //alert("close socket.");
+          var str = element.replace("#", "");
+          webSocketViews[str] = new WebSocketView();
+          webSocketViews[str].render();
+        };
+      },
+      getParams: function(params) {
+        params = params || {};
+        params["element"] = ("element" in params) ? params["element"] || this.element : this.element;
+        params["url"] = ("url" in params) ? params["url"] || this.url : this.url;
+        return params;
+      },
+      getConnection: function(url) {
+        return new WebSocket("ws://" + url || this.url);
+      },
+      /**
+      * event
+      */
+      search: function(e){
+        var str = $("#text1").val(); // console.log(str);
+        if (str in webSocketViews) {
+          return false;
+        }
+
+        var tab = $('<li class=""><button data-toggle="tab" \
+                    class="hover-white close">×</button><a href="#'+str+'" data-toggle="tab" >'+str+'</a></li>');
+        var tab_content = $('<div class="well tab-pane" id="'+str+'"></div>');
+        $(".subnav ul.nav").append(tab);
+        $(".tab-content").append(tab_content);
+        $(".subnav ul.nav a").click();
+
+        webSocketViews[str] = new WebSocketView();
+        webSocketViews[str].render({
+          "url": location.host + "{% url rsyslogmonitor_tail %}",
+          "element": "#" + str
+        });
+
+        setTimeout(function(){
+          webSocketViews[str].socket.send(str);
+        }, 1000);
+
+        return false;
+      },
+      /**
+      * event
+      */
+      closeButton: function(e) {
+        var button = $(e.currentTarget);
+        var a = button.next("a");
+        var str = a.html();
+
+        try {
+          webSocketViews[str].socket.close();
+          delete webSocketViews[str];
+          button.remove(); a.remove();
+          $("#"+str).remove();
+        } catch(e) {
+          //console.log(e);
+        }
+      },
+      /**
+       * functions
+       */
+      embeddedColor: function(data){
+        var str = this.element.replace("#", "");
+        var arr = data.split(" ");
+        arr[3] = "<em class='label label-success'>"+arr[3]+"</em>";
+        arr[4] = "<em class='label label-info'>"+arr[4]+"</em>";
+        return arr.join(" ").replace(str, "<em class='label label-warning'>"+str+"</em>");
+      }
+    });
+
+    var SleepView = Backbone.View.extend({
+      //el: $("#bottom-button"),
+      //events: {"click": "scrollBottom"},
+      initialize: function() {
+        var self = this
+        $("#bottom-button").click(function(){
+          bottom_flag = bottom_flag ? false : true;
+          bottom_flag ? self.setTimer() : self.clearTimer();
+        });
+      },
+      setTimer: function() {
+        this.timerID = setInterval(this.scrollBottom, 1000);
+      },
+      clearTimer: function() {
+        clearInterval(this.timerID);
+      },
+      scrollBottom: function() {
+        $('html, body').animate({scrollTop: $(window).scrollTop() + $(window).height() + 100000}, "slow");
+      }
+    });
+    var sleepView = new SleepView();
+
+    /**
+     * :TODO webSocketView in sutililty class
+     */
+    var webSocketViews = {"buffer": new WebSocketView()};
+    webSocketViews["buffer"].render();
+  });
+  //-->
+</script>
+{% endblock %}
+
+
+
+{% block body %}
+
+
+<body data-target=".subnav">
+  <div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container">
+        <a data-target=".nav-collapse" data-toggle="collapse" class="btn btn-navbar">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </a>
+        <a href="#" class="brand">rsyslog monitor</a>
+        <div class="nav-collapse">
+          <ul class="nav">
+            <li><a href="#">Search</a></li>
+            <li><a href="#">Visualization</a></li>
+            <li><a href="#">Metrics</a></li>
+            <li><a href="#">Analysis</a></li>
+          </ul>
+          <ul class="nav pull-right">
+            <li id="fat-menu" class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Setting <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://github.com/ikeikeikeike/rsyslog-monitor">README</a></li>
+              <li class="divider"></li>
+              <li><a href="#">logout</a></li>
+            </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <header class="jumbotron subhead" id="overview">
+      <h1>buffer</h1><h3>　</h3>
+      <div class="subnav">
+        <ul class="nav nav-tabs">
+          <li class="active">
+          <!-- <button class="close" data-dismiss="alert">×</button> -->
+          <a href="#buffer" data-toggle="tab">buffer</a>
+          </li>
+        </ul>
+      </div>
+      </header>
+      <div class="tab-content">
+        <div class="well tab-pane active" id="buffer"></div>
+      </div>
+      <div id="search" class="navbar-fixed-bottom">
+        <form id="search-form" class="form-search span7" >
+          <input type="text" id="text1" class="input-medium search-query">
+          <button type="submit" class="btn btn-primary"><i class="icon-search icon-white"></i> SEARCH</button>
+        </form>
+        <div class="span4">
+          <button id="bottom-button" class="btn btn-warning" data-toggle="button">
+            <i class="icon-arrow-down icon-white"></i> BOTTOM
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+
+
+{% endblock %}
+
+
+{# vim: set et fenc=utf-8 ff=unix sts=2 sw=2 ts=2 : #}
